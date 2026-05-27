@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 캐치마인드 챌린지</title>
+    <script src="https://cdn.roboflow.com/0.2.26/roboflow.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #333; }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 500px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .target-word { color: #d9534f; font-size: 1.5rem; }
+        .timer { color: #0275d8; }
+        .ai-guess {
+            width: 500px;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #555;
+            min-height: 24px;
+        }
+        canvas {
+            border: 3px solid #333;
+            border-radius: 8px;
+            background-color: #ffffff;
+            cursor: crosshair;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        #startBtn { background-color: #5cb85c; color: white; }
+        #startBtn:disabled { background-color: #cccccc; cursor: not-allowed; }
+        #clearBtn { background-color: #f0ad4e; color: white; }
+        
+        /* 결과 오버레이 화면 */
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #overlay h2 { font-size: 3rem; margin-bottom: 20px; }
+        #overlay button { background-color: #0275d8; color: white; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <h1>🎨 AI 스피드 캐치마인드</h1>
+    <div class="ai-guess" id="statusText">모델을 불러오는 중입니다... 잠시만 기다려주세요.</div>
+    
+    <div class="game-info">
+        <div>제시어: <span class="target-word" id="targetWord">준비</span> (<span id="wordProgress">0/2</span>)</div>
+        <div class="timer">남은 시간: <span id="timeDisplay">30</span>초</div>
+    </div>
+    
+    <div class="ai-guess">AI의 현재 추측: <b id="currentGuess">-</b></div>
+
+    <canvas id="drawCanvas" width="500" height="500"></canvas>
+
+    <div class="controls">
+        <button id="clearBtn">지우기</button>
+        <button id="startBtn" disabled>게임 시작</button>
+    </div>
+
+    <div id="overlay">
+        <h2 id="resultTitle">결과</h2>
+        <button onclick="location.reload()">다시 하기</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. Roboflow 모델 설정
+        // ==========================================
+        const RF_PUBLISHABLE_KEY = "LjwmAM3pDWrt5ZHUSCqg"; 
+        const RF_MODEL_ID = "ai-classification-project";
